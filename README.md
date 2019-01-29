@@ -1,2 +1,2 @@
 # Data-Mining
-R code and projects completed for ECO395, Data Mining/Statistical Learning, taught by Dr. J Scott, Spring 2019, University of Texas at Austin
+R code and projects completed by Kylie Taylor for ECO395M "Data Mining/Statistical Learning", taught by Dr. J Scott, University of Texas at Austin, Spring 2019
