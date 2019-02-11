@@ -359,6 +359,14 @@ The 95% confidence interval of mean rent for a green building is (4.12, 55.92), 
 
     ## [1] 58.77902
 
+``` r
+ggplot(GB, aes(green_rating, Rent, fill=factor(green_rating)), col = rainbow(10)) +
+  geom_boxplot()+
+  labs(title="Boxplot of Rents by Grouped by Green Rating", x ="Green Rating", y = "Rent" , fill = "Building Type")+
+  stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3, show_guide = FALSE) + 
+  geom_text(data = aggr.mean, aes(label = Rent, y = Rent + 18))
+```
+
     ## Warning: `show_guide` has been deprecated. Please use `show.legend`
     ## instead.
 
@@ -444,9 +452,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">12431</td>
-<td align="center">10854</td>
-<td align="center">11848</td>
+<td align="center">11428</td>
+<td align="center">10833</td>
+<td align="center">10774</td>
 </tr>
 </tbody>
 </table>
@@ -467,9 +475,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">10847</td>
-<td align="center">10967</td>
-<td align="center">11072</td>
+<td align="center">10232</td>
+<td align="center">10461</td>
+<td align="center">10607</td>
 </tr>
 </tbody>
 </table>
@@ -488,8 +496,8 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">11421</td>
-<td align="center">12041</td>
+<td align="center">10928</td>
+<td align="center">11320</td>
 </tr>
 </tbody>
 </table>
@@ -505,7 +513,7 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">20456</td>
+<td align="center">19358</td>
 </tr>
 </tbody>
 </table>
@@ -530,9 +538,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">44733</td>
-<td align="center">30680</td>
-<td align="center">26970</td>
+<td align="center">46623</td>
+<td align="center">34792</td>
+<td align="center">29011</td>
 </tr>
 </tbody>
 </table>
@@ -553,9 +561,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">24874</td>
-<td align="center">24102</td>
-<td align="center">25668</td>
+<td align="center">27674</td>
+<td align="center">29206</td>
+<td align="center">34232</td>
 </tr>
 </tbody>
 </table>
@@ -574,8 +582,8 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">28794</td>
-<td align="center">36509</td>
+<td align="center">36497</td>
+<td align="center">39810</td>
 </tr>
 </tbody>
 </table>
@@ -591,7 +599,7 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">74349</td>
+<td align="center">73606</td>
 </tr>
 </tbody>
 </table>
