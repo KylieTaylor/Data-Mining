@@ -444,9 +444,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">10368</td>
-<td align="center">9993</td>
-<td align="center">11195</td>
+<td align="center">12431</td>
+<td align="center">10854</td>
+<td align="center">11848</td>
 </tr>
 </tbody>
 </table>
@@ -467,9 +467,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">10709</td>
-<td align="center">10054</td>
-<td align="center">9655</td>
+<td align="center">10847</td>
+<td align="center">10967</td>
+<td align="center">11072</td>
 </tr>
 </tbody>
 </table>
@@ -488,8 +488,8 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">9622</td>
-<td align="center">9965</td>
+<td align="center">11421</td>
+<td align="center">12041</td>
 </tr>
 </tbody>
 </table>
@@ -505,7 +505,7 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">18831</td>
+<td align="center">20456</td>
 </tr>
 </tbody>
 </table>
@@ -530,9 +530,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">44751</td>
-<td align="center">30473</td>
-<td align="center">22773</td>
+<td align="center">44733</td>
+<td align="center">30680</td>
+<td align="center">26970</td>
 </tr>
 </tbody>
 </table>
@@ -553,9 +553,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">18495</td>
-<td align="center">18364</td>
-<td align="center">23579</td>
+<td align="center">24874</td>
+<td align="center">24102</td>
+<td align="center">25668</td>
 </tr>
 </tbody>
 </table>
@@ -574,8 +574,8 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">27374</td>
-<td align="center">33981</td>
+<td align="center">28794</td>
+<td align="center">36509</td>
 </tr>
 </tbody>
 </table>
@@ -591,7 +591,7 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">69443</td>
+<td align="center">74349</td>
 </tr>
 </tbody>
 </table>
