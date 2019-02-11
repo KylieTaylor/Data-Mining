@@ -268,6 +268,8 @@ The next statistic the "excel-guru" looked at was the median market rent grouped
 
 ![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-4-1.png)
 
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-5-1.png)
+
 We also thought it would be useful to examine the mean and found that the mean rent for green buildings is $30.02, while the mean rent for nongreen buildings is $28.27. The difference in these means is $1.75.
 
 In the next step of our analysis was to examine the variance of rent of the green and non-green buildings. It is crucial to look at the variance, since the variance will tell us more about how much potential revenue is "garaunteed". This enables us to see the differences between possible profitability for each type of building and estimate the ranges of possible rent prices.
@@ -362,14 +364,14 @@ The 95% confidence interval of mean rent for a green building is (4.12, 55.92), 
     ## Warning: `show_guide` has been deprecated. Please use `show.legend`
     ## instead.
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-7-1.png)
 
 The "data guru" goes on to calculate the extra revenue expected each year for a 250,000 square foot building. He took the difference in median rents, $2.60 and multiplied that by 250,000 sq ft to render extra revenues of $650,000 per year. The first, out of many flaws, of this calculation is that it is unknown as to why he is calculating expected extra revenue for a 250,000 sq ft building, when we only know that the building is 15 stories high. In reality, the expected square feet of a 15 story building is 262,977, refer to the plot below. If using the same difference in median rent to calculate extra revenues, this would render $683,741, which is $33,741 more dollars per year than his original estimate.
 
     ## (Intercept)     stories 
     ##   -37335.16    20020.83
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-8-1.png)
 
     ## [1] 262977.3
 
@@ -387,17 +389,17 @@ The next part of the analysis that we found to be misleading was the cost recoup
 
 This calculation still does not make much sense, because it implies 100% occupancy and does not account for variation in rent prices. As we can see from the plot below, new buildings normally do not have 100% occupancy. From what we can see from the market of buildings similar to ours, less than 10 years old and betwee 10 and 20 stories, average leasing rate does not surpass the 90% occupany until approximately 6 years old. This means that we would not recover green rating certification costs at the rate that he proposed, instead it would be significantly slower.
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-9-1.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 He then states that past the 9 year mark, the owner would be making the $650,000 in green certification revenue as profit for the next thirty years. Clearly the owner will be recovering from certification costs much later than 9 years after completion, and the claim that she will collect profit for the next 30 years is also outlandish. The "data guru" clearly did not take renovations or other unexpected costs into consideration when making that statement. The density plot below reveals that green buildings of 32 years have had at least one renovation in the past. This disputes his claim that we will earn profits for 30 years, since some of the profits will be allocated to renovations within those 30 years.
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-10-1.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-11-1.png)
 
 As an extension to the cost benefit analysis done above, we think it would be important to include how leasing rates are expected to change with employment growth rate. We are not garaunteed a 90% occupancy rate, so we must consider other confounding variables, such as employment growth rates in the region. We are intersted in how the leasing rate will change as the employment growth fluctuates. We notice that for negative employment growth rates, the leasing rate is very high for all buildings. This is interesting because it is not intuitive, this may be because there are such few observations for that employment growth rate. One thing that does stand out is that the leasing rates for green buildings is normally relatively high, it drops below 20 only a few times. This is indicitive that the owners ability to fill spots in the building as employment growth rates fluctuate should not be a major concern to her.
 
     ## Warning: Removed 74 rows containing missing values (geom_point).
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-11-1.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-12-1.png)
 
 Data Visualization 2: Flights at ABIA
 -------------------------------------
@@ -417,14 +419,14 @@ Overall, the data shows us that, on average, delays on the East coast coming to 
 
     ## Source : https://maps.googleapis.com/maps/api/geocode/json?address=World&key=xxx-8XB9V3HPyEo
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-12-1.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-13-1.png)
 
 Regression vs. KNN
 ------------------
 
 First, we visualize what our data looks like. From the two scatter plots below, we can deduce that as the mileage of the car increases, the sale price of the car decreases. This is a good finding, because it follows inuition.
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-13-1.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-14-1.png)
 
 The following tables represent the RMSEs of the the simple linear models, linear model with a polynomial, and the 7 KNN models with varying number of neighbors Mercedes Benz S Class 350. We can see that in this case, the KNN with around 60 neighbors does the best job at predicting price of the S Class 350, with the smallest RMSE of 10721. The plots show the predictions of KNN estimates with varying neighbors and an orange line which is the fit of the linear model with mileage squared as the explanatory variables. We can see that as the number of neighbors increases, the error of the predictions increases. In this case, the optimal value of K is 60.
 
@@ -444,9 +446,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">13694</td>
-<td align="center">12492</td>
-<td align="center">13624</td>
+<td align="center">12111</td>
+<td align="center">10745</td>
+<td align="center">11018</td>
 </tr>
 </tbody>
 </table>
@@ -467,9 +469,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">13498</td>
-<td align="center">12752</td>
-<td align="center">12896</td>
+<td align="center">10266</td>
+<td align="center">10415</td>
+<td align="center">10743</td>
 </tr>
 </tbody>
 </table>
@@ -488,8 +490,8 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">13021</td>
-<td align="center">13432</td>
+<td align="center">11035</td>
+<td align="center">11471</td>
 </tr>
 </tbody>
 </table>
@@ -505,12 +507,12 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">20882</td>
+<td align="center">19673</td>
 </tr>
 </tbody>
 </table>
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-15-1.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-16-1.png)
 
 The following tables represent the RMSEs of the the simple linear models, linear model with a polynomial, and the 7 KNN models with varying number of neighbors for Mercedes Benz S Class 65 AMG. We can see that in this case, the KNN with 10 neighbors does the best job at predicting price of the S Class 65 AMG, with the smallest RMSE of 23719. The plots show the predictions of KNN estimates with varying neighbors and an orange line which is the fit of the linear model with mileage squared as the explanatory variables. We can see that as the number of neighbors increases, the error of the predictions dramatically increases. In this case, the optimal value of K is approximately 10.
 
@@ -530,9 +532,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">45101</td>
-<td align="center">32373</td>
-<td align="center">18064</td>
+<td align="center">41233</td>
+<td align="center">28537</td>
+<td align="center">23344</td>
 </tr>
 </tbody>
 </table>
@@ -553,9 +555,9 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">15920</td>
-<td align="center">16367</td>
-<td align="center">17963</td>
+<td align="center">23142</td>
+<td align="center">21833</td>
+<td align="center">25545</td>
 </tr>
 </tbody>
 </table>
@@ -574,8 +576,8 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">19903</td>
-<td align="center">27349</td>
+<td align="center">27732</td>
+<td align="center">35795</td>
 </tr>
 </tbody>
 </table>
@@ -591,16 +593,16 @@ The following tables represent the RMSEs of the the simple linear models, linear
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">70601</td>
+<td align="center">74665</td>
 </tr>
 </tbody>
 </table>
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-17-1.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-18-1.png)
 
 The two following graphs show the movement of the RMSE as the number of neighbors increases for both types of S Class Mercedes Benz. They appear to move in very similar directions, having RMSE increase with K. Looking at the plot of RMSE against K for the S Class 350, we see that as K approaches 300 and further, the RMSE becomes much larger. Since we are looking for the smallest RMSE, we verify that the optimal K for this class of car is closer to 60.
 Looking at the plot of RMSE against K for the S Class 65 AMG's, we see that as the number of neighbors we use to predict price increases, the RMSE also increases. One thing to make note of is the magnitude of the RMSE for this subset of cars. The RMSE is much higher in magnitude than its 350 counterpart. We are able to verify that the optimal K for this class is close to 10. The higher K reveals that we are estimating f(x) using many points, possibly far away (this increases bias), and the lower K reveals that we are using not very many points that are likely close by (this reduces bias).
 
 Each class of car is telling us different stories about what the optimal K is. The S Class 350 is revealing that a slightly larger K is optimal, whereas the S Class 65 AMG is telling us that a small K is optimal. The reason that this may be is becuase of the size, quality and behavior of the data sets. Data sets with large numbers of observations are inherently better and normally behave better than data sets with low numbers of observations. The KNN estimations for the S Class 65 AMG price have quite a few less observations than the S Class 350. Although there is more data for the S Class 350, it appears to contain more clusters than the S Class 65 AMG data. Since the data appears to have clusters, the higher optimal K value for the S Class 350 reveals that the we are likely having to use points slightly further away to estimate f(x), compared to the S Class 65 AMG.
 
-![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-18-1.png)![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-18-2.png)
+![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-19-1.png)![](Exercise_1_-_Data__FINAL__files/figure-markdown_github/unnamed-chunk-19-2.png)
