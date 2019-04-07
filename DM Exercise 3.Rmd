@@ -1,0 +1,409 @@
+---
+title: "Data Mining Exercise 3"
+author: "Kylie Taylor, David Fraire, Larisa Barreto"
+date: "4/4/2019"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+
+#1) Determing rental price
+
+```{r, include=FALSE}
+library(ggplot2)
+library(doMC)
+library(mosaic)
+library(gamlr)
+library(beepr)
+library(skimr)
+library(tidyverse)
+library(foreach)
+library(FNN)
+
+GB1 <- read.csv("~/Documents/UT Austin/Spring 2019/GreenBuilding.csv")
+GB <- na.omit(GB1)
+```
+
+
+To begin, we did a check that the variables make sense and are contained within reasonable bounds by investigating summary statistics.
+
+```{r, echo=FALSE, warning=FALSE}
+pander::pander(summary(GB))
+```
+
+
+
+Since all variables appear to behaving well, we continued with our analysis. We investigated whether to include LEED and Energystar as seperate variables or to merge them into a single "green certified" variable. Below is a correlation plot of the variables LEED, Energystar, and green rating. Energystar has 96% correlation with green rating and LEED only has 27% correlation with green rating.
+
+```{r, echo=FALSE, warning=FALSE}
+df1 <- data.frame(GB$LEED, GB$Energystar, GB$green_rating)
+psych::pairs.panels(df1)
+```
+
+
+
+Based off the findings above, we decided to merge the two variables into one dummy variable called "green certified", which equals one if the building is both LEED and/or Energystar rated, and 0 if neither. There are 7,141 buildings that are not certified, and 679 that are.  
+
+```{r, include=FALSE}
+C <- rowSums(cbind(GB$LEED, GB$Energystar))
+GB$greencertified <- as.factor(ifelse(C >= 1, 1, 0))
+summary(GB$greencertified)
+ID <- as.factor(GB$CS_PropertyID)
+GB2 <- cbind(GB, ID)
+```
+
+
+The goal of this exercise is to build the best predictive model for price of rent. While there are many ways to approach this probelm, we decided to use stepwise selection to have R assist in picking the most robust model. In order to implement any automatic selection methodologies, we need to start with a working model. This allows us to combine some human nuance and the processing power of a modern computer to find the "best" model. In this problem we will define the "best" model as the one that has the lowest AIC and lowest out-of sample RMSE. It would be ideal to use cross validation to calculate out-of-sample RMSE when using stepwise selection, but the calculations are too extensive, therefore AIC is used to approximate $MSE_{out}$. The exact equation is $MSE_{AIC} = MSE_{in} (1+\frac{p}{n})$. Instead, we will use 10 fold cross validation to determine the RMSE of the "best" model that stepwise selection suggests. 
+
+
+
+The steps taken for finding the best predictive model are:
+
+
+1) Define a baseline model as 
+$$ Rent_i = \beta_0 + green\_rating_i\beta_1 +...+ e_i $$
+
+
+2) Use stepwise selection from the baseline to find model with lowest AIC 
+
+
+3) Include all "green certification" and building identification interactions in a stepwise selection process
+
+
+5) Define a train test split of the Green Buildings data set and take out of sample RMSE of the "best" model
+
+
+6) Preform lasso regression as another model selection process
+
+
+7) Determine which model has lowest AIC and $RMSE_{out}$, and if any interacted coefficients are significiant in that model
+
+
+8) Report coefficient of "green certification", if rent is different for different greeen certified buildings, and any other findings
+
+
+
+
+The baseline model we started with is 
+$$Rent_i = \beta_0 + green\_rating_i \beta_1 + class\_a_i \beta_2 + class\_b_i\beta_3 + e_i $$
+
+We chose these variables since we need for green rating to be included in our final model, and we felt like the class of the building will effect the price of rent the most. The other variables were likely to be conditional on other factors of the building and surrounding buildings. For example, an old building may be very run down and cheap to rent, or historical, and high reputation and be expensive to rent. This is why we decided to begin with a simple working model.
+
+
+We decided to skip over using a forwards and backwards selection process since we liked the flexibility stepwise selection offers. With forward selection, we consider only additions to our working model, and with backwards selection we only consider deletions from a full model. While both methods have their advantages, a stepwise process allows us to add and delete variables as the process suggests (or as the AIC suggests).
+
+
+We decided to include all interaction terms as the scope of the stepwise selection process. Interaction terms may caputure a dynamic realtionship bewtween two input variables that has a significant effect on the rent price of a building. For example, the interaction berween cluster_rent (average rent in buildings local market) and size of the building proved to be a robust determinant in rental prices.
+
+
+The stepwise selection identified 68 inputs that create the "best" model. The AIC for this model is 34,392.71. 
+We conducted a 10 fold CV of the "best" model and found out of sample MSE converges to 83.23, or a RMSE of 9.123. We know that we have made an improvement from our baseline model, becuase the AIC is 57943.82, and CV out of sample MSE for the baseline is 217.39, or RMSE of 14.74. A plot of the RMSE values can be observed below. 
+
+
+```{r, include=FALSE}
+registerDoMC(4)
+
+baseline <- lm(Rent ~ greencertified +class_a +class_b, data=GB)
+lm_step=step(baseline, na.rm =TRUE, scope =~ (. + CS_PropertyID + cluster + size + empl_gr + leasing_rate + stories+ age 
+	        +renovated +class_a +class_b  + net + amenities + cd_total_07 +hd_total07 +total_dd_07 
+	        +Precipitation +Gas_Costs +Electricity_Costs +cluster_rent)^2)
+length(coef(lm_step))
+beepr::beep(4)
+N = nrow(GB)
+K = 10
+fold_id = rep_len(1:K, N)  # repeats 1:K over and over again
+fold_id = sample(fold_id, replace=FALSE) # permute the order randomly
+
+maxM = 10
+err_save = matrix(0, nrow=K, ncol=maxM)
+
+for(i in 1:K) {
+  train_set = which(fold_id != i)
+  y_test = GB$Rent[-train_set]
+  for(m in 1:maxM) {
+    lm1 = lm(Rent ~ greencertified + cluster_rent + size + class_a + class_b + 
+    cd_total_07 + age + cluster + leasing_rate + net + Electricity_Costs + 
+    empl_gr + amenities + hd_total07 + cluster_rent:size + size:cluster + 
+    cluster_rent:cluster + size:leasing_rate + class_b:age + 
+    cluster_rent:leasing_rate + size:Electricity_Costs + cluster:Electricity_Costs + 
+    cd_total_07:net + cluster_rent:Electricity_Costs + class_a:empl_gr + 
+    size:cd_total_07 + cluster_rent:age + age:Electricity_Costs + 
+    greencertified:amenities + cluster_rent:class_a + cluster_rent:class_b + 
+    cluster:leasing_rate + Electricity_Costs:amenities + cluster:hd_total07 + 
+    cd_total_07:hd_total07 + Electricity_Costs:hd_total07 + cluster_rent:net + 
+    size:class_a + size:age + size:class_b + size:amenities + 
+    class_b:amenities + greencertified:age + size:hd_total07 + 
+    class_a:hd_total07 + class_b:hd_total07 + class_a:Electricity_Costs + 
+    class_b:Electricity_Costs + class_b:cd_total_07 + class_a:cd_total_07 + 
+    net:Electricity_Costs + net:hd_total07, data=GB[train_set,])
+   
+    yhat_test = predict(lm1, newdata=GB[-train_set,])
+    err_save[i, m] = mean((y_test - yhat_test)^2)
+  }
+}
+
+beepr::beep(4)
+colMeans(err_save)
+
+err_save.base = matrix(0, nrow=K, ncol=maxM)
+
+for(i in 1:K) {
+  train_set = which(fold_id != i)
+  y_test = GB$Rent[-train_set]
+  for(m in 1:maxM) {
+    base = lm(Rent ~ greencertified +class_a +class_b, data=GB[train_set,])
+    yhat_test.base = predict(base, newdata=GB[-train_set,])
+    err_save.base[i, m] = mean((y_test - yhat_test.base)^2)
+  }
+}
+AIC(base)
+beepr::beep(4)
+colMeans(err_save.base)
+```
+
+```{r, echo=FALSE, warning=FALSE}
+plot(1:maxM, sqrt(colMeans(err_save)), main="RMSE at each K fold", xlab= "Number of Folds", ylab = "RMSE", ylim = c(6,20), type='l')
+lines(1:maxM, sqrt(colMeans(err_save.base)), col="red")
+legend("right",fill=c("black","red"),
+	legend=c("Step Model","Base Model"))
+```
+
+
+We also ran a lasso regression to compare with the stepwise results. The lasso is a process for automated variable selection. The goal of a lasso regression is to minimize 
+$$ \frac{1}{n} dev(\beta) + \lambda pen(\beta)$$
+where dev=deviance and is -2 times the log likelihood of the model.
+
+
+This is done by using standard model selection tools, like AIC and RMSE, to find the best $\lambda$. The $\lambda$ is the penalty weight, or cost function, that penalizes departure of the fitted $\beta$ from 0. The $\beta$'s that prevail for varying weights of lambda, suggest that including a given $\beta$ is worth the penalty weight, $\lambda$, adding to the deviance. This means $\beta$'s that prevail at the optimal $\lambda$ are suggested to be significant in estimating the outcome of interest. A disclaimer about lasso is that selections are unstable and can vary greatly from different samples of the population.
+
+
+The lasso suggests 19 main effect variables. The estimated $\beta$'s that do not tend to deviate from zero are "CS_PropertyID", "cluster", "stories", "Energystar", "total_dd_07 ", and "Precipitation". This means that the lasso on this set of data suggests the above variables might not need to be included in a model. The best $\lambda$ associated with these 19 variables is -2.166. The AIC at this $\lambda$ is 36,370.89. The minimum deviance CV out-of-sample is associated with a log($\lambda$) = 0.6719. Based of these finidngs, we know we will be using the stepwise selected model, since it has a lower AIC.
+
+
+The plot below shows the cross-validated error rates and AIC at each respective $\lambda$ value/penalty. It is easy to observe that the scaled AIC is much lower than the CV error, even at the "best" $\lambda$ value. This reveals that the AIC under estimated the out-of-sample error rate at the optimal $\lambda$, in fact, for all $\lambda$'s. 
+
+
+```{r, include=FALSE}
+x = sparse.model.matrix(Rent ~ ., data=GB)[,-1] #created a sparse matrix
+y = GB$Rent #take out y variable for conveinience 
+
+#fit a single lasso
+lasso = gamlr(x, y, family="gaussian")
+plot(lasso, main="Single Lasso Path Plot 1")
+
+#AIC order selected coefficients 
+AIC(lasso)
+plot(lasso$lambda, AIC(lasso), main="Model AIC for Penalty values", xlab = "Lambda", ylab="AIC")
+plot(log(lasso$lambda), AIC(lasso), main="Model AIC for Penalty values", xlab = "logLambda", ylab="AIC")
+
+# the coefficients at the AIC-optimizing value
+beta = coef(lasso)
+beta
+
+# optimal lambda
+log(lasso$lambda[which.min(AIC(lasso))])
+sum(beta!=0) #picks 19 variables, 20 with intercept at log(lambda) = -2.165552, this is the lowest lambda
+
+# cross validated lasso (verb just prints progress), with 10 folds
+cvl = cv.gamlr(x, y, nfold=10, family="gaussian", verb=TRUE)
+
+# plot the out-of-sample deviance as a function of log lambda
+
+# CV min deviance selection
+b.min = coef(cvl, select="min")
+log(cvl$lambda.min)
+sum(b.min!=0)
+
+# CV 1se selection (the default)
+b.1se = coef(cvl)
+log(cvl$lambda.1se)
+sum(b.1se!=0)
+```
+
+```{r, echo=FALSE, warning=FALSE}
+## comparing AIC and the CV error
+# note that AIC is a pretty good estimate of out-of-sample deviance for values of lambda near the optimum
+# outside that range: much worse 
+plot(cvl, bty="n", ylim = c(-10, 250), xlim = c(-2,2.5), xlab="log(Lambda)", ylab="MSE and AIC", main = "Comparison of AIC and CV error")
+lines(log(lasso$lambda), AIC(lasso)/N, col="orange", lwd=2)
+legend("top", fill=c("blue","orange"),
+	legend=c("CV","AIC"), bty="n")
+```
+
+
+
+The last model we built was used to asses whether "green certification" effect is different for different buildings. We assumed that "different buildings" implied individual buildings, identified by the variable "CS_PropertyID". To begin, we difined a working model as 
+$$ Rent_i = \beta_0 + greencertified \beta_1 + PropertyID \beta_2 + greencertified*PropertyID \beta_3 +e_i $$
+
+
+We interacted certification and propertyID to identify if rent changes for each building if the building has certification. A stepwise selection process was implemented to determine the "best" model from the baseline. The stepwise selection suggest 69 variables in the model. This model has an AIC of 34,394.52 and out-of-sample MSE of 82.21, or RMSE of 9.07. This is an improvement from the baseline which has an AIC of 58,114.4, and an MSE of 222.69, or RMSE of 14.92. This can been observed in the plot below.
+
+
+```{r, include=FALSE}
+baseline2 <- lm(Rent ~ greencertified*CS_PropertyID, data=GB)
+lm_step2=step(baseline2, na.rm =TRUE, scope =~ (. + cluster + size + empl_gr + leasing_rate + stories+ age 
+	        +renovated +class_a +class_b  + net + amenities + cd_total_07 +hd_total07 +total_dd_07 
+	        +Precipitation +Gas_Costs +Electricity_Costs +cluster_rent)^2)
+length(coef(lm_step2))
+beepr::beep(4)
+
+N = nrow(GB)
+K = 10
+fold_id = rep_len(1:K, N)  # repeats 1:K over and over again
+fold_id = sample(fold_id, replace=FALSE) # permute the order randomly
+
+maxM = 10
+err_save2 = matrix(0, nrow=K, ncol=maxM)
+
+for(i in 1:K) {
+  train_set = which(fold_id != i)
+  y_test = GB$Rent[-train_set]
+  for(m in 1:maxM) {
+    lm2 = lm(Rent ~ greencertified + CS_PropertyID + greencertified*CS_PropertyID+ cluster_rent + size + 
+    class_a + class_b + cd_total_07 + age + cluster + net + leasing_rate + 
+    empl_gr + Electricity_Costs + amenities + hd_total07 + stories + 
+    cluster_rent:size + size:cluster + cluster_rent:cluster + 
+    class_b:age + size:leasing_rate + cd_total_07:net + cluster_rent:age + 
+    size:cd_total_07 + size:Electricity_Costs + age:Electricity_Costs + 
+    CS_PropertyID:class_b + cluster:Electricity_Costs + greencertified:amenities + 
+    cluster_rent:net + size:class_a + Electricity_Costs:amenities + 
+    cluster_rent:amenities + CS_PropertyID:size + CS_PropertyID:amenities + 
+    cluster_rent:leasing_rate + CS_PropertyID:class_a + CS_PropertyID:age + 
+    cluster:leasing_rate + size:age + CS_PropertyID:empl_gr + 
+    CS_PropertyID:Electricity_Costs + CS_PropertyID:hd_total07 + 
+    cluster:hd_total07 + cd_total_07:hd_total07 + Electricity_Costs:hd_total07 + 
+    size:class_b + class_b:amenities + cluster_rent:stories + 
+    age:stories + amenities:stories + empl_gr:stories + class_a:hd_total07 + 
+    cluster:stories + CS_PropertyID:cluster + cluster:empl_gr + 
+    class_b:hd_total07 + greencertified:age + class_b:cd_total_07 + 
+    class_b:Electricity_Costs + class_a:Electricity_Costs + net:Electricity_Costs + 
+    net:hd_total07 + age:cluster + empl_gr:amenities + cluster_rent:cd_total_07 + 
+    cd_total_07:stories + hd_total07:stories , data=GB[train_set,])
+   
+    yhat_test = predict(lm2, newdata=GB[-train_set,])
+    err_save2[i, m] = mean((y_test - yhat_test)^2)
+  }
+}
+
+beepr::beep(4)
+sqrt(colMeans(err_save2))
+
+err_save2.base = matrix(0, nrow=K, ncol=maxM)
+
+for(i in 1:K) {
+  train_set = which(fold_id != i)
+  y_test = GB$Rent[-train_set]
+  for(m in 1:maxM) {
+    lm2.base = lm(Rent ~ greencertified*CS_PropertyID , data=GB[train_set,])
+   
+    yhat_test.base = predict(lm2.base, newdata=GB[-train_set,])
+    err_save2.base[i, m] = mean((y_test - yhat_test.base)^2)
+  }
+}
+
+AIC(lm2.base)
+beepr::beep(4)
+colMeans(err_save2.base)
+
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+plot(1:maxM, sqrt(colMeans(err_save2)), main="RMSE at each K fold, for interactions", xlab= "Number of Folds", ylab = "RMSE", ylim = c(6,20), type='l')
+lines(1:maxM, sqrt(colMeans(err_save2.base)), col="red")
+legend("right",fill=c("black","red"),
+	legend=c("Step Model","Base Model"))
+```
+
+
+
+We used orthogonal machine learning to determine any idiosyncratic variation in rents by adjusting for individual buildings and green ratings. We found that the buildings with the ID's "5737391", "5768846", "5521767", "5625732", "4384675", "5697840", "5601727", "5513026", "4070629", and "5849472" had the highest sensitivity to changes in rent accounting for green rating status. On the other hand, we found that the buildings "5622696", "5335788", "5015583", "1380142", "6008486", "5713134", "5634370", "5622424", "5360564", and "5056278" were the top 10 least sensitive to changes in rent, accounting for green ratings. 
+
+
+```{r, include=FALSE}
+library(gamlr)
+xID = sparse.model.matrix(~ID-1, data=GB2)
+xrating = sparse.model.matrix(~green_rating-1, data=GB2)
+xx = cbind(xrating, xID)
+
+# variation in rent predicted by rating and building
+pfit = cv.gamlr(x=xx, y=log(GB2$Rent), lmr=1e-5, standardize=FALSE)
+qfit = cv.gamlr(x=xx, y=GB2$ID, lmr=1e-5, standardize=FALSE)
+
+# Calculate residuals: variation in rent and units sold that
+# cannot be predicted by item and week
+lpr = drop(log(GB2$Rent) - predict(pfit, xx))
+lqr = drop(GB2$CS_PropertyID - predict(qfit, xx))
+
+library(tm)
+descr = Corpus(VectorSource(as.character(GB2$ID)))
+xtext = DocumentTermMatrix(descr)
+xtext = sparseMatrix(i=xtext$i,j=xtext$j,x=as.numeric(xtext$v>0), # convert from stm to Matrix format
+              dims=dim(xtext),dimnames=dimnames(xtext))
+colnames(xtext)
+
+xtreat = cBind(1,xtext,xrating)
+ofit = gamlr(x=lpr*xtreat, y=lqr, standardize=FALSE, free=1)
+gams = coef(ofit)[-1,]
+
+# create a testing matrix, matching each level to a row in X
+test_ind = match(levels(GB2$ID),GB2$ID)
+xtest = xtext[test_ind,]
+rownames(xtest) = GB2$ID[test_ind]
+
+el = drop(gams[1] + xtest%*%gams[(1:ncol(xtext))+1])
+hist(el, xlab="OML elasticities", xlim=c(-6,1), col="lightblue", main="",breaks=7)
+# high and low sensitivity buildings
+names(sort(el)[1:20])
+names(sort(-el)[1:20])
+```
+
+
+Finally, to report results from the models we built, below are the outputs from the first model and the second model regressions (one with interaction of certification and ID). As the exercise asks, the first model reveals that the average change in rental income per square foot is expected to increase by $1.38 per square foot if the building has green certification, accounting for other features of the building. The exercise also asks to report if green certification is different for different buildings. While the estimate on Property ID is significant, the interaction between certification and ID is not significant. This reveals that changes in rental income per square foot for buildings with green certification is not likely to be *statistically* different for different buidlings. 
+
+
+
+Some interesting findings that the models revealed were statisically significant estimates for the class of the building (higher class buildings can expect higher rents), the cluster of buildings (certian clusters have consistently higher rents), and an interaction between size and electricity costs (for an average sized building, rent is expected to decrease as electricity costs increase). 
+
+
+```{r,echo=FALSE, warning=FALSE}
+stargazer::stargazer(lm1, lm2, type = "text")
+```
+
+
+
+To conclude, determing factors that effect rent per square foot of buildings across the entire U.S. is no small feat. There are countless variables to account for and only a limited amount of information we have. Given the information we have, we tried to build the "best" model we can using stepwise selection and lasso regression. We have found that whether a building has green certification does result in higher expected rents, but is also highly dependent on other factors the building has. There is no perfect model, but given the tools and information we have, we can take out best shot at trying to determine important factors that can increase or decrease rent. 
+
+
+
+
+
+#2)What causes what?
+
+
+*1.	Why can't I just get data from a few different cities and run the regression of Crime on Police to understand how more cops in the streets affect crime?*
+
+The reason we can't just run Crime on Police and get an accurate understanding of how more cops affect crime is because such a regression would not only be lacking better specification, but also fail to establish causality, suffering from an extreme endogeneity issue. As we hear in the podcast, there are many factors we should take into account when trying to find true causality. Since we have different cities, it would be necessary to control for differences among them, including already-existing crime rates, police data, and other socioeconomic factors unique to each city. A model like this would also tend to be biased because cities with a high crime rate have the incentive to have large police forces. We need a more fine-tuned model to get the results we are looking for in this study. 
+
+*2.	How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the Table 2, from the researcher's paper.*
+
+The researchers from UPenn needed to collect data from a city where there are very specific fluctuations of police presence in the streets, unrelated to crime. They found the perfect example in D.C., a city where by law, extra police presence is dispatched for terror alert levels higher than orange. This is a very useful way to isolate the "Police" effect on crime, when they also controlled for other variables such as fluctuating tourist presence, measured by Metro ridership. Table 2 shows the basic regression that Klick and Tabarrok ran on daily D.C. crime totals against the terror alert level (1=high, Column 1) and then a second regression including daily Metro ridership (Column 2). For Column 1, the coefficient on the alert level is significant at the 5\% level and indicates that on high-alert days, the total number of crimes decreases by an average of seven crimes per day, or approximately 6.6\%.  Column 2 the researchers ensure that the high-alert levels are not being confounded with tourism levels by including a logged midday Metro ridership parameter in the regression. The findings were as follows: the coefficient on the high-alert parameter is slightly smaller, and that a 10\% increase in Metro ridership only increases number of crimes by 1.7 crimes a day on average.
+
+*3.	Why did they have to control for Metro ridership? What was that trying to capture?*
+
+To test if fewer visitors to the D.C. area could explain the results of the first regression, the researchers used Metro ridership data to control for such effect. Metro data suggested that there was a very small decrease in midday ridership on high alert days. Using this parameter as an instruent to capture tourism levels, the researchers were able to verify that the high-alert levels were not being confounded with visitor numbers. 
+
+*4.	Below I am showing you "Table 4" from the researchers' paper. Can you describe the model being estimated here? What is the conclusion?*
+
+The regression in Column 1 includes district fixed effects as well as the log of midday ridership. We see that during periods of high alert, crime in District 1 deceases by 2.62 crimes per day. We also see that crime in the other districts decreases by 0.571 crimes per day, but this number is not statistically significant. 
+
+
+
+
+
+
+
+
+
+
