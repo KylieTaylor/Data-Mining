@@ -1,0 +1,223 @@
+---
+title: "Stepwise selection and Lasso"
+author: "Kylie Taylor"
+date: "4/10/2019"
+output: pdf_document
+---
+
+```{r}
+library(ggplot2)
+library(doMC)
+library(mosaic)
+library(gamlr)
+library(beepr)
+library(skimr)
+library(tidyverse)
+library(foreach)
+library(FNN)
+
+GB1 <- read.csv("~/Documents/UT Austin/Spring 2019/GreenBuilding.csv")
+GB <- na.omit(GB1)
+
+C <- rowSums(cbind(GB$LEED, GB$Energystar))
+GB$greencertified <- as.factor(ifelse(C >= 1, 1, 0))
+summary(GB$greencertified)
+ID <- as.factor(GB$CS_PropertyID)
+GB2 <- cbind(GB, ID)
+
+registerDoMC(4)
+
+baseline <- lm(Rent ~ greencertified +class_a +class_b, data=GB)
+lm_step=step(baseline, na.rm =TRUE, scope =~ (. + CS_PropertyID + cluster + size + empl_gr + leasing_rate + stories+ age 
+	        +renovated +class_a +class_b  + net + amenities + cd_total_07 +hd_total07 +total_dd_07 
+	        +Precipitation +Gas_Costs +Electricity_Costs +cluster_rent)^2)
+length(coef(lm_step))
+beepr::beep(4)
+N = nrow(GB)
+K = 10
+fold_id = rep_len(1:K, N)  # repeats 1:K over and over again
+fold_id = sample(fold_id, replace=FALSE) # permute the order randomly
+
+maxM = 10
+err_save = matrix(0, nrow=K, ncol=maxM)
+
+for(i in 1:K) {
+  train_set = which(fold_id != i)
+  y_test = GB$Rent[-train_set]
+  for(m in 1:maxM) {
+    lm1 = lm(Rent ~ greencertified + cluster_rent + size + class_a + class_b + 
+    cd_total_07 + age + cluster + leasing_rate + net + Electricity_Costs + 
+    empl_gr + amenities + hd_total07 + cluster_rent:size + size:cluster + 
+    cluster_rent:cluster + size:leasing_rate + class_b:age + 
+    cluster_rent:leasing_rate + size:Electricity_Costs + cluster:Electricity_Costs + 
+    cd_total_07:net + cluster_rent:Electricity_Costs + class_a:empl_gr + 
+    size:cd_total_07 + cluster_rent:age + age:Electricity_Costs + 
+    greencertified:amenities + cluster_rent:class_a + cluster_rent:class_b + 
+    cluster:leasing_rate + Electricity_Costs:amenities + cluster:hd_total07 + 
+    cd_total_07:hd_total07 + Electricity_Costs:hd_total07 + cluster_rent:net + 
+    size:class_a + size:age + size:class_b + size:amenities + 
+    class_b:amenities + greencertified:age + size:hd_total07 + 
+    class_a:hd_total07 + class_b:hd_total07 + class_a:Electricity_Costs + 
+    class_b:Electricity_Costs + class_b:cd_total_07 + class_a:cd_total_07 + 
+    net:Electricity_Costs + net:hd_total07, data=GB[train_set,])
+   
+    yhat_test = predict(lm1, newdata=GB[-train_set,])
+    err_save[i, m] = mean((y_test - yhat_test)^2)
+  }
+}
+
+beepr::beep(4)
+colMeans(err_save)
+
+err_save.base = matrix(0, nrow=K, ncol=maxM)
+
+for(i in 1:K) {
+  train_set = which(fold_id != i)
+  y_test = GB$Rent[-train_set]
+  for(m in 1:maxM) {
+    base = lm(Rent ~ greencertified +class_a +class_b, data=GB[train_set,])
+    yhat_test.base = predict(base, newdata=GB[-train_set,])
+    err_save.base[i, m] = mean((y_test - yhat_test.base)^2)
+  }
+}
+AIC(base)
+beepr::beep(4)
+colMeans(err_save.base)
+
+registerDoMC(4)
+
+baseline <- lm(Rent ~ greencertified +class_a +class_b, data=GB)
+lm_step=step(baseline, na.rm =TRUE, scope =~ (. + CS_PropertyID + cluster + size + empl_gr + leasing_rate + stories+ age 
+	        +renovated +class_a +class_b  + net + amenities + cd_total_07 +hd_total07 +total_dd_07 
+	        +Precipitation +Gas_Costs +Electricity_Costs +cluster_rent)^2)
+length(coef(lm_step))
+beepr::beep(4)
+N = nrow(GB)
+K = 10
+fold_id = rep_len(1:K, N)  # repeats 1:K over and over again
+fold_id = sample(fold_id, replace=FALSE) # permute the order randomly
+
+maxM = 10
+err_save = matrix(0, nrow=K, ncol=maxM)
+
+for(i in 1:K) {
+  train_set = which(fold_id != i)
+  y_test = GB$Rent[-train_set]
+  for(m in 1:maxM) {
+    lm1 = lm(Rent ~ greencertified + cluster_rent + size + class_a + class_b + 
+    cd_total_07 + age + cluster + leasing_rate + net + Electricity_Costs + 
+    empl_gr + amenities + hd_total07 + cluster_rent:size + size:cluster + 
+    cluster_rent:cluster + size:leasing_rate + class_b:age + 
+    cluster_rent:leasing_rate + size:Electricity_Costs + cluster:Electricity_Costs + 
+    cd_total_07:net + cluster_rent:Electricity_Costs + class_a:empl_gr + 
+    size:cd_total_07 + cluster_rent:age + age:Electricity_Costs + 
+    greencertified:amenities + cluster_rent:class_a + cluster_rent:class_b + 
+    cluster:leasing_rate + Electricity_Costs:amenities + cluster:hd_total07 + 
+    cd_total_07:hd_total07 + Electricity_Costs:hd_total07 + cluster_rent:net + 
+    size:class_a + size:age + size:class_b + size:amenities + 
+    class_b:amenities + greencertified:age + size:hd_total07 + 
+    class_a:hd_total07 + class_b:hd_total07 + class_a:Electricity_Costs + 
+    class_b:Electricity_Costs + class_b:cd_total_07 + class_a:cd_total_07 + 
+    net:Electricity_Costs + net:hd_total07, data=GB[train_set,])
+   
+    yhat_test = predict(lm1, newdata=GB[-train_set,])
+    err_save[i, m] = mean((y_test - yhat_test)^2)
+  }
+}
+
+beepr::beep(4)
+colMeans(err_save)
+
+err_save.base = matrix(0, nrow=K, ncol=maxM)
+
+for(i in 1:K) {
+  train_set = which(fold_id != i)
+  y_test = GB$Rent[-train_set]
+  for(m in 1:maxM) {
+    base = lm(Rent ~ greencertified +class_a +class_b, data=GB[train_set,])
+    yhat_test.base = predict(base, newdata=GB[-train_set,])
+    err_save.base[i, m] = mean((y_test - yhat_test.base)^2)
+  }
+}
+AIC(base)
+beepr::beep(4)
+colMeans(err_save.base)
+
+x = sparse.model.matrix(Rent ~ ., data=GB)[,-1] #created a sparse matrix
+y = GB$Rent #take out y variable for conveinience 
+
+#fit a single lasso
+lasso = gamlr(x, y, family="gaussian")
+plot(lasso, main="Single Lasso Path Plot 1")
+
+#AIC order selected coefficients 
+AIC(lasso)
+plot(lasso$lambda, AIC(lasso), main="Model AIC for Penalty values", xlab = "Lambda", ylab="AIC")
+plot(log(lasso$lambda), AIC(lasso), main="Model AIC for Penalty values", xlab = "logLambda", ylab="AIC")
+
+# the coefficients at the AIC-optimizing value
+beta = coef(lasso)
+beta
+
+# optimal lambda
+log(lasso$lambda[which.min(AIC(lasso))])
+sum(beta!=0) #picks 19 variables, 20 with intercept at log(lambda) = -2.165552, this is the lowest lambda
+
+# cross validated lasso (verb just prints progress), with 10 folds
+cvl = cv.gamlr(x, y, nfold=10, family="gaussian", verb=TRUE)
+
+# plot the out-of-sample deviance as a function of log lambda
+
+# CV min deviance selection
+b.min = coef(cvl, select="min")
+log(cvl$lambda.min)
+sum(b.min!=0)
+
+# CV 1se selection (the default)
+b.1se = coef(cvl)
+log(cvl$lambda.1se)
+sum(b.1se!=0)
+
+plot(cvl, bty="n", ylim = c(-10, 250), xlim = c(-2,2.5), xlab="log(Lambda)", ylab="MSE and AIC", main = "Comparison of AIC and CV error")
+lines(log(lasso$lambda), AIC(lasso)/N, col="orange", lwd=2)
+legend("top", fill=c("blue","orange"),
+	legend=c("CV","AIC"), bty="n")
+
+library(gamlr)
+xID = sparse.model.matrix(~ID-1, data=GB2)
+xrating = sparse.model.matrix(~green_rating-1, data=GB2)
+xx = cbind(xrating, xID)
+
+# variation in rent predicted by rating and building
+pfit = cv.gamlr(x=xx, y=log(GB2$Rent), lmr=1e-5, standardize=FALSE)
+qfit = cv.gamlr(x=xx, y=GB2$ID, lmr=1e-5, standardize=FALSE)
+
+# Calculate residuals: variation in rent and units sold that
+# cannot be predicted by item and week
+lpr = drop(log(GB2$Rent) - predict(pfit, xx))
+lqr = drop(GB2$CS_PropertyID - predict(qfit, xx))
+
+library(tm)
+descr = Corpus(VectorSource(as.character(GB2$ID)))
+xtext = DocumentTermMatrix(descr)
+xtext = sparseMatrix(i=xtext$i,j=xtext$j,x=as.numeric(xtext$v>0), # convert from stm to Matrix format
+              dims=dim(xtext),dimnames=dimnames(xtext))
+colnames(xtext)
+
+xtreat = cBind(1,xtext,xrating)
+ofit = gamlr(x=lpr*xtreat, y=lqr, standardize=FALSE, free=1)
+gams = coef(ofit)[-1,]
+
+# create a testing matrix, matching each level to a row in X
+test_ind = match(levels(GB2$ID),GB2$ID)
+xtest = xtext[test_ind,]
+rownames(xtest) = GB2$ID[test_ind]
+
+el = drop(gams[1] + xtest%*%gams[(1:ncol(xtext))+1])
+hist(el, xlab="OML elasticities", xlim=c(-6,1), col="lightblue", main="",breaks=7)
+# high and low sensitivity buildings
+names(sort(el)[1:20])
+names(sort(-el)[1:20])
+
+```
+
